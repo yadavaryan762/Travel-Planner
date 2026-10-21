@@ -10,7 +10,7 @@ function App() {
 
             <div className="welcome-card">
                 <h2>Welcome!</h2>
-                <p>Your travel planning journey starts here.</p>
+                <p>Plan your next trip with ease and enjoy every journey.</p>
             </div>
         </div>
     );
