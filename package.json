@@ -1,0 +1,10 @@
+{
+  "name": "travel-planner",
+  "version": "1.0.0",
+  "description": "A beginner-friendly Travel Planner desktop application",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "electron": "electron ."
+  }
+}

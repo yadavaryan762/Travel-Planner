@@ -1,0 +1,20 @@
+
+const { app, BrowserWindow } = require("electron");
+
+function createWindow() {
+    const win = new BrowserWindow({
+        width: 1000,
+        height: 700,
+        title: "Travel Planner",
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+
+    win.loadURL("http://127.0.0.1:5173");
+}
+
+app.whenReady().then(() => {
+    createWindow();
+});
