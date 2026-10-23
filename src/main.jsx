@@ -40,14 +40,70 @@ function App() {
                     </div>
                 </section>
 
-                <section className="trips-section">
-                    <h2>My Trips</h2>
+                
+<section className="trips-section">
+    <h2>My Trips</h2>
 
-                    <div className="empty-state">
-                        <h3>No trips planned yet</h3>
-                        <p>Your planned trips will appear here.</p>
-                    </div>
-                </section>
+    <div className="empty-state">
+        <h3>No trips planned yet</h3>
+        <p>Your planned trips will appear here.</p>
+    </div>
+</section>
+
+<section className="add-trip-section">
+    <h2>Plan a New Trip</h2>
+    <p>Enter your travel details below.</p>
+
+    <form className="trip-form" onSubmit={(event) => {
+        event.preventDefault();
+    }}>
+        <div className="form-group">
+            <label htmlFor="destination">Destination</label>
+            <input
+                id="destination"
+                type="text"
+                placeholder="e.g. Manali"
+                required
+            />
+        </div>
+
+        <div className="form-row">
+            <div className="form-group">
+                <label htmlFor="startDate">Start Date</label>
+                <input
+                    id="startDate"
+                    type="date"
+                    required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="endDate">End Date</label>
+                <input
+                    id="endDate"
+                    type="date"
+                    required
+                />
+            </div>
+        </div>
+
+        <div className="form-group">
+            <label htmlFor="budget">Budget (₹)</label>
+            <input
+                id="budget"
+                type="number"
+                placeholder="Enter your budget"
+                min="1"
+                required
+            />
+        </div>
+
+        <button type="submit" className="add-trip-button">
+            Add Trip
+        </button>
+    </form>
+</section>
+
             </main>
         </div>
     );
