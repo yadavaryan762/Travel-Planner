@@ -1,10 +1,21 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
 function App() {
-    const [trips, setTrips] = useState([]);
+    const [trips, setTrips] = useState(() => {
+    try {
+        const savedTrips = localStorage.getItem("travelTrips");
+
+        return savedTrips ? JSON.parse(savedTrips) : [];
+    } catch (error) {
+        return [];
+    }
+});
+    useEffect(() => {
+    localStorage.setItem("travelTrips", JSON.stringify(trips));
+}, [trips]);
 
     const [destination, setDestination] = useState("");
     const [startDate, setStartDate] = useState("");
