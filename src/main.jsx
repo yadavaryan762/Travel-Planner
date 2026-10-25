@@ -3,31 +3,72 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
+const stationList = [
+    "Pune Junction",
+    "Mumbai Central",
+    "New Delhi",
+    "Chennai Central"
+];
+
+// Sample facility information for demonstration purposes
+const stationFacilities = {
+    "Pune Junction": [
+        "Platforms",
+        "Waiting Room",
+        "Ticket Counter",
+        "Food Outlets",
+        "Toilets"
+    ],
+    "Mumbai Central": [
+        "Platforms",
+        "Waiting Room",
+        "Ticket Counter",
+        "Food Outlets",
+        "Toilets"
+    ],
+    "New Delhi": [
+        "Platforms",
+        "Waiting Room",
+        "Ticket Counter",
+        "Food Outlets",
+        "Toilets"
+    ],
+    "Chennai Central": [
+        "Platforms",
+        "Waiting Room",
+        "Ticket Counter",
+        "Food Outlets",
+        "Toilets"
+    ]
+};
+
 function App() {
     const [activePage, setActivePage] = useState("Dashboard");
 
-    // Load saved trips when the application starts
     const [trips, setTrips] = useState(() => {
         try {
-            const savedTrips = localStorage.getItem("travelTrips");
+            const savedTrips = localStorage.getItem("railwayJourneys");
             return savedTrips ? JSON.parse(savedTrips) : [];
         } catch (error) {
             return [];
         }
     });
 
-    const [destination, setDestination] = useState("");
+    const [sourceStation, setSourceStation] = useState("");
+    const [destinationStation, setDestinationStation] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [budget, setBudget] = useState("");
+    const [notes, setNotes] = useState("");
     const [editingTripId, setEditingTripId] = useState(null);
+    const [selectedStation, setSelectedStation] = useState("Pune Junction");
+    const [stationSearch, setStationSearch] = useState("");
 
-    // Save trips whenever the list changes
     useEffect(() => {
-        localStorage.setItem("travelTrips", JSON.stringify(trips));
+        localStorage.setItem("railwayJourneys", JSON.stringify(trips));
     }, [trips]);
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA");
 
     const upcomingTrips = trips.filter(
         (trip) => trip.startDate >= today
@@ -37,34 +78,40 @@ function App() {
         (trip) => trip.endDate < today
     );
 
-    // Clear the form
     function clearForm() {
-        setDestination("");
+        setSourceStation("");
+        setDestinationStation("");
         setStartDate("");
         setEndDate("");
         setBudget("");
+        setNotes("");
         setEditingTripId(null);
     }
 
-    // Add a new trip or update an existing trip
     function handleSubmit(event) {
         event.preventDefault();
 
-        const cleanDestination = destination.trim();
+        const cleanSource = sourceStation.trim();
+        const cleanDestination = destinationStation.trim();
         const tripBudget = Number(budget);
 
-        if (!cleanDestination) {
-            alert("Please enter a destination.");
+        if (!cleanSource || !cleanDestination) {
+            alert("Please enter both station names.");
+            return;
+        }
+
+        if (cleanSource.toLowerCase() === cleanDestination.toLowerCase()) {
+            alert("Source and destination stations must be different.");
             return;
         }
 
         if (startDate < today && editingTripId === null) {
-            alert("Please select today or a future date.");
+            alert("Please select today or a future journey date.");
             return;
         }
 
         if (endDate < startDate) {
-            alert("End date must be on or after the start date.");
+            alert("Return date must be on or after the journey date.");
             return;
         }
 
@@ -78,10 +125,12 @@ function App() {
                 if (trip.id === editingTripId) {
                     return {
                         ...trip,
+                        sourceStation: cleanSource,
                         destination: cleanDestination,
                         startDate,
                         endDate,
-                        budget: tripBudget
+                        budget: tripBudget,
+                        notes: notes.trim()
                     };
                 }
 
@@ -89,38 +138,40 @@ function App() {
             });
 
             setTrips(updatedTrips);
-            alert("Trip updated successfully!");
+            alert("Journey updated successfully!");
         } else {
             const newTrip = {
                 id: Date.now(),
+                sourceStation: cleanSource,
                 destination: cleanDestination,
                 startDate,
                 endDate,
-                budget: tripBudget
+                budget: tripBudget,
+                notes: notes.trim()
             };
 
             setTrips((previousTrips) => [...previousTrips, newTrip]);
-            alert("Trip added successfully!");
+            alert("Journey added successfully!");
         }
 
         clearForm();
-        setActivePage("My Trips");
+        setActivePage("My Journeys");
     }
 
-    // Load a trip into the form for editing
     function handleEdit(trip) {
-        setDestination(trip.destination);
-        setStartDate(trip.startDate);
-        setEndDate(trip.endDate);
-        setBudget(String(trip.budget));
+        setSourceStation(trip.sourceStation || "");
+        setDestinationStation(trip.destination || "");
+        setStartDate(trip.startDate || "");
+        setEndDate(trip.endDate || "");
+        setBudget(String(trip.budget || ""));
+        setNotes(trip.notes || "");
         setEditingTripId(trip.id);
         setActivePage("Dashboard");
     }
 
-    // Delete a trip
     function handleDelete(tripId) {
         const confirmed = window.confirm(
-            "Are you sure you want to delete this trip?"
+            "Are you sure you want to delete this journey?"
         );
 
         if (!confirmed) {
@@ -136,13 +187,12 @@ function App() {
         }
     }
 
-    // Display all trips
     function renderTrips() {
         if (trips.length === 0) {
             return (
                 <div className="empty-state">
-                    <h3>No trips planned yet</h3>
-                    <p>Add your first trip to get started!</p>
+                    <h3>No journeys planned yet</h3>
+                    <p>Add your first railway journey to get started.</p>
                 </div>
             );
         }
@@ -151,14 +201,18 @@ function App() {
             <div className="trip-list">
                 {trips.map((trip) => (
                     <div className="trip-card" key={trip.id}>
-                        <h3>{trip.destination}</h3>
+                        <h3>
+                            {trip.sourceStation || "Station not specified"}
+                            {" → "}
+                            {trip.destination}
+                        </h3>
 
                         <p>
-                            <strong>Start Date:</strong> {trip.startDate}
+                            <strong>Journey Date:</strong> {trip.startDate}
                         </p>
 
                         <p>
-                            <strong>End Date:</strong> {trip.endDate}
+                            <strong>Return Date:</strong> {trip.endDate}
                         </p>
 
                         <p>
@@ -166,13 +220,19 @@ function App() {
                             ₹{Number(trip.budget).toLocaleString("en-IN")}
                         </p>
 
+                        {trip.notes && (
+                            <p>
+                                <strong>Notes:</strong> {trip.notes}
+                            </p>
+                        )}
+
                         <div className="trip-actions">
                             <button
                                 type="button"
                                 className="edit-button"
                                 onClick={() => handleEdit(trip)}
                             >
-                                Edit Trip
+                                Edit Journey
                             </button>
 
                             <button
@@ -180,7 +240,7 @@ function App() {
                                 className="delete-button"
                                 onClick={() => handleDelete(trip.id)}
                             >
-                                Delete Trip
+                                Delete Journey
                             </button>
                         </div>
                     </div>
@@ -189,11 +249,14 @@ function App() {
         );
     }
 
+    const filteredStations = stationList.filter((station) =>
+        station.toLowerCase().includes(stationSearch.toLowerCase())
+    );
+
     return (
         <div className="dashboard">
-            {/* Sidebar */}
             <aside className="sidebar">
-                <h2 className="logo">Travel Planner</h2>
+                <h2 className="logo">Railway Planner</h2>
 
                 <nav>
                     <button
@@ -209,11 +272,21 @@ function App() {
                     <button
                         type="button"
                         className={`nav-button ${
-                            activePage === "My Trips" ? "active" : ""
+                            activePage === "My Journeys" ? "active" : ""
                         }`}
-                        onClick={() => setActivePage("My Trips")}
+                        onClick={() => setActivePage("My Journeys")}
                     >
-                        My Trips
+                        My Journeys
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`nav-button ${
+                            activePage === "Station Facilities" ? "active" : ""
+                        }`}
+                        onClick={() => setActivePage("Station Facilities")}
+                    >
+                        Station Facilities
                     </button>
 
                     <button
@@ -228,75 +301,80 @@ function App() {
                 </nav>
             </aside>
 
-            {/* Main Content */}
             <main className="main-content">
-                {/* Dashboard Page */}
                 {activePage === "Dashboard" && (
                     <>
                         <header className="topbar">
-                            <h1>My Dashboard</h1>
-                            <p>Plan your next adventure!</p>
+                            <h1>Railway Journey Dashboard</h1>
+                            <p>Plan your journey and explore station facilities.</p>
                         </header>
 
                         <section className="summary-cards">
                             <div className="summary-card">
-                                <h3>Total Trips</h3>
+                                <h3>Total Journeys</h3>
                                 <p className="number">{trips.length}</p>
                             </div>
 
                             <div className="summary-card">
-                                <h3>Upcoming Trips</h3>
-                                <p className="number">
-                                    {upcomingTrips.length}
-                                </p>
+                                <h3>Upcoming Journeys</h3>
+                                <p className="number">{upcomingTrips.length}</p>
                             </div>
 
                             <div className="summary-card">
-                                <h3>Completed Trips</h3>
-                                <p className="number">
-                                    {completedTrips.length}
-                                </p>
+                                <h3>Completed Journeys</h3>
+                                <p className="number">{completedTrips.length}</p>
                             </div>
                         </section>
 
                         <section className="add-trip-section">
                             <h2>
                                 {editingTripId !== null
-                                    ? "Edit Trip"
-                                    : "Plan a New Trip"}
+                                    ? "Edit Journey"
+                                    : "Plan a Railway Journey"}
                             </h2>
 
-                            <p>
-                                Enter your travel details below.
-                            </p>
+                            <p>Enter your journey details below.</p>
 
-                            <form
-                                className="trip-form"
-                                onSubmit={handleSubmit}
-                            >
-                                <div className="form-group">
-                                    <label htmlFor="destination">
-                                        Destination
-                                    </label>
+                            <form className="trip-form" onSubmit={handleSubmit}>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label htmlFor="sourceStation">
+                                            Source Station
+                                        </label>
+                                        <input
+                                            id="sourceStation"
+                                            type="text"
+                                            placeholder="e.g. Pune Junction"
+                                            value={sourceStation}
+                                            onChange={(event) =>
+                                                setSourceStation(event.target.value)
+                                            }
+                                            required
+                                        />
+                                    </div>
 
-                                    <input
-                                        id="destination"
-                                        type="text"
-                                        placeholder="e.g. Manali"
-                                        value={destination}
-                                        onChange={(event) =>
-                                            setDestination(event.target.value)
-                                        }
-                                        required
-                                    />
+                                    <div className="form-group">
+                                        <label htmlFor="destinationStation">
+                                            Destination Station
+                                        </label>
+                                        <input
+                                            id="destinationStation"
+                                            type="text"
+                                            placeholder="e.g. Mumbai Central"
+                                            value={destinationStation}
+                                            onChange={(event) =>
+                                                setDestinationStation(event.target.value)
+                                            }
+                                            required
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label htmlFor="startDate">
-                                            Start Date
+                                            Journey Date
                                         </label>
-
                                         <input
                                             id="startDate"
                                             type="date"
@@ -322,9 +400,8 @@ function App() {
 
                                     <div className="form-group">
                                         <label htmlFor="endDate">
-                                            End Date
+                                            Return Date
                                         </label>
-
                                         <input
                                             id="endDate"
                                             type="date"
@@ -339,10 +416,7 @@ function App() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="budget">
-                                        Budget (₹)
-                                    </label>
-
+                                    <label htmlFor="budget">Estimated Budget (₹)</label>
                                     <input
                                         id="budget"
                                         type="number"
@@ -356,13 +430,23 @@ function App() {
                                     />
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    className="add-trip-button"
-                                >
+                                <div className="form-group">
+                                    <label htmlFor="notes">Journey Notes (Optional)</label>
+                                    <input
+                                        id="notes"
+                                        type="text"
+                                        placeholder="e.g. Train details or reminders"
+                                        value={notes}
+                                        onChange={(event) =>
+                                            setNotes(event.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                <button type="submit" className="add-trip-button">
                                     {editingTripId !== null
-                                        ? "Update Trip"
-                                        : "Add Trip"}
+                                        ? "Update Journey"
+                                        : "Add Journey"}
                                 </button>
 
                                 {editingTripId !== null && (
@@ -378,67 +462,128 @@ function App() {
                         </section>
 
                         <section className="trips-section">
-                            <h2>Recent Trips</h2>
+                            <h2>Recent Journeys</h2>
                             {renderTrips()}
                         </section>
                     </>
                 )}
 
-                {/* My Trips Page */}
-                {activePage === "My Trips" && (
+                {activePage === "My Journeys" && (
                     <>
                         <header className="topbar">
-                            <h1>My Trips</h1>
-                            <p>View and manage your planned trips.</p>
+                            <h1>My Journeys</h1>
+                            <p>View, edit, or delete your saved railway journeys.</p>
                         </header>
 
                         {renderTrips()}
 
                         <button
                             type="button"
-                            className="add-trip-button"
+                            className="add-trip-button new-journey-button"
                             onClick={() => {
                                 clearForm();
                                 setActivePage("Dashboard");
                             }}
                         >
-                            Plan a New Trip
+                            Plan a New Journey
                         </button>
                     </>
                 )}
 
-                {/* Settings Page */}
+                {activePage === "Station Facilities" && (
+                    <>
+                        <header className="topbar">
+                            <h1>Station Facilities</h1>
+                            <p>Search a station to view its sample facility information.</p>
+                        </header>
+
+                        <section className="add-trip-section">
+                            <div className="form-group">
+                                <label htmlFor="stationSearch">Search Stations</label>
+                                <input
+                                    id="stationSearch"
+                                    type="text"
+                                    placeholder="Type a station name..."
+                                    value={stationSearch}
+                                    onChange={(event) =>
+                                        setStationSearch(event.target.value)
+                                    }
+                                />
+                            </div>
+
+                            <div className="station-list">
+                                {filteredStations.length === 0 ? (
+                                    <p>No matching stations found.</p>
+                                ) : (
+                                    filteredStations.map((station) => (
+                                        <button
+                                            type="button"
+                                            key={station}
+                                            className={`station-button ${
+                                                selectedStation === station
+                                                    ? "selected"
+                                                    : ""
+                                            }`}
+                                            onClick={() => setSelectedStation(station)}
+                                        >
+                                            {station}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+
+                            {stationList.includes(selectedStation) && (
+                                <div className="facility-panel">
+                                    <h2>{selectedStation}</h2>
+                                    <p className="sample-note">
+                                        Demonstration data — verify facilities
+                                        with official station information.
+                                    </p>
+
+                                    <div className="facility-list">
+                                        {stationFacilities[selectedStation].map(
+                                            (facility) => (
+                                                <div
+                                                    className="facility-item"
+                                                    key={facility}
+                                                >
+                                                    {facility}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    </>
+                )}
+
                 {activePage === "Settings" && (
                     <>
                         <header className="topbar">
                             <h1>Settings</h1>
-                            <p>About your Travel Planner application.</p>
+                            <p>Application information and saved data.</p>
                         </header>
 
                         <section className="add-trip-section">
-                            <h2>Application Information</h2>
-
+                            <h2>About This Application</h2>
                             <p>
-                                <strong>Application:</strong> Travel Planner
+                                <strong>Application:</strong> Railway Journey Planner
                             </p>
-
                             <p>
-                                <strong>Platform:</strong> Desktop application
-                                built with React and Electron
+                                <strong>Platform:</strong> Desktop application built
+                                with React and Electron
                             </p>
-
                             <p>
-                                <strong>Total Saved Trips:</strong>{" "}
-                                {trips.length}
+                                <strong>Total Saved Journeys:</strong> {trips.length}
                             </p>
-
                             <p>
-                                Your trips are saved locally on this device.
+                                Journey information is saved locally in this
+                                application's browser storage.
                             </p>
-
                             <p>
-                                You can add, edit, and delete trips from the
-                                application.
+                                Station facilities shown in this version are sample
+                                information and are not live railway data.
                             </p>
                         </section>
                     </>
