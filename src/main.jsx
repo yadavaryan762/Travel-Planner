@@ -6,6 +6,7 @@ import "./style.css";
 function App() {
     const [activePage, setActivePage] = useState("Dashboard");
 
+    // Load saved trips when the application starts
     const [trips, setTrips] = useState(() => {
         try {
             const savedTrips = localStorage.getItem("travelTrips");
@@ -19,44 +20,12 @@ function App() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [budget, setBudget] = useState("");
+    const [editingTripId, setEditingTripId] = useState(null);
 
+    // Save trips whenever the list changes
     useEffect(() => {
         localStorage.setItem("travelTrips", JSON.stringify(trips));
     }, [trips]);
-
-    function handleSubmit(event) {
-        event.preventDefault();
-
-        if (endDate < startDate) {
-            alert("End date must be after the start date.");
-            return;
-        }
-
-        const newTrip = {
-            id: Date.now(),
-            destination: destination.trim(),
-            startDate,
-            endDate,
-            budget: Number(budget)
-        };
-
-        setTrips([...trips, newTrip]);
-
-        setDestination("");
-        setStartDate("");
-        setEndDate("");
-        setBudget("");
-
-        setActivePage("My Trips");
-    }
-
-    function handleDelete(tripId) {
-        const updatedTrips = trips.filter(
-            (trip) => trip.id !== tripId
-        );
-
-        setTrips(updatedTrips);
-    }
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -68,12 +37,112 @@ function App() {
         (trip) => trip.endDate < today
     );
 
+    // Clear the form
+    function clearForm() {
+        setDestination("");
+        setStartDate("");
+        setEndDate("");
+        setBudget("");
+        setEditingTripId(null);
+    }
+
+    // Add a new trip or update an existing trip
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        const cleanDestination = destination.trim();
+        const tripBudget = Number(budget);
+
+        if (!cleanDestination) {
+            alert("Please enter a destination.");
+            return;
+        }
+
+        if (startDate < today && editingTripId === null) {
+            alert("Please select today or a future date.");
+            return;
+        }
+
+        if (endDate < startDate) {
+            alert("End date must be on or after the start date.");
+            return;
+        }
+
+        if (!Number.isFinite(tripBudget) || tripBudget <= 0) {
+            alert("Please enter a valid budget.");
+            return;
+        }
+
+        if (editingTripId !== null) {
+            const updatedTrips = trips.map((trip) => {
+                if (trip.id === editingTripId) {
+                    return {
+                        ...trip,
+                        destination: cleanDestination,
+                        startDate,
+                        endDate,
+                        budget: tripBudget
+                    };
+                }
+
+                return trip;
+            });
+
+            setTrips(updatedTrips);
+            alert("Trip updated successfully!");
+        } else {
+            const newTrip = {
+                id: Date.now(),
+                destination: cleanDestination,
+                startDate,
+                endDate,
+                budget: tripBudget
+            };
+
+            setTrips((previousTrips) => [...previousTrips, newTrip]);
+            alert("Trip added successfully!");
+        }
+
+        clearForm();
+        setActivePage("My Trips");
+    }
+
+    // Load a trip into the form for editing
+    function handleEdit(trip) {
+        setDestination(trip.destination);
+        setStartDate(trip.startDate);
+        setEndDate(trip.endDate);
+        setBudget(String(trip.budget));
+        setEditingTripId(trip.id);
+        setActivePage("Dashboard");
+    }
+
+    // Delete a trip
+    function handleDelete(tripId) {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this trip?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setTrips((previousTrips) =>
+            previousTrips.filter((trip) => trip.id !== tripId)
+        );
+
+        if (editingTripId === tripId) {
+            clearForm();
+        }
+    }
+
+    // Display all trips
     function renderTrips() {
         if (trips.length === 0) {
             return (
                 <div className="empty-state">
                     <h3>No trips planned yet</h3>
-                    <p>Your planned trips will appear here.</p>
+                    <p>Add your first trip to get started!</p>
                 </div>
             );
         }
@@ -85,25 +154,35 @@ function App() {
                         <h3>{trip.destination}</h3>
 
                         <p>
-                            <strong>Start:</strong> {trip.startDate}
+                            <strong>Start Date:</strong> {trip.startDate}
                         </p>
 
                         <p>
-                            <strong>End:</strong> {trip.endDate}
+                            <strong>End Date:</strong> {trip.endDate}
                         </p>
 
                         <p>
                             <strong>Budget:</strong>{" "}
-                            ₹{trip.budget.toLocaleString("en-IN")}
+                            ₹{Number(trip.budget).toLocaleString("en-IN")}
                         </p>
 
-                        <button
-                            type="button"
-                            className="delete-button"
-                            onClick={() => handleDelete(trip.id)}
-                        >
-                            Delete Trip
-                        </button>
+                        <div className="trip-actions">
+                            <button
+                                type="button"
+                                className="edit-button"
+                                onClick={() => handleEdit(trip)}
+                            >
+                                Edit Trip
+                            </button>
+
+                            <button
+                                type="button"
+                                className="delete-button"
+                                onClick={() => handleDelete(trip.id)}
+                            >
+                                Delete Trip
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -112,6 +191,7 @@ function App() {
 
     return (
         <div className="dashboard">
+            {/* Sidebar */}
             <aside className="sidebar">
                 <h2 className="logo">Travel Planner</h2>
 
@@ -148,12 +228,14 @@ function App() {
                 </nav>
             </aside>
 
+            {/* Main Content */}
             <main className="main-content">
+                {/* Dashboard Page */}
                 {activePage === "Dashboard" && (
                     <>
                         <header className="topbar">
                             <h1>My Dashboard</h1>
-                            <p>Plan your next adventure.</p>
+                            <p>Plan your next adventure!</p>
                         </header>
 
                         <section className="summary-cards">
@@ -177,14 +259,16 @@ function App() {
                             </div>
                         </section>
 
-                        <section className="trips-section">
-                            <h2>My Trips</h2>
-                            {renderTrips()}
-                        </section>
-
                         <section className="add-trip-section">
-                            <h2>Plan a New Trip</h2>
-                            <p>Enter your travel details below.</p>
+                            <h2>
+                                {editingTripId !== null
+                                    ? "Edit Trip"
+                                    : "Plan a New Trip"}
+                            </h2>
+
+                            <p>
+                                Enter your travel details below.
+                            </p>
 
                             <form
                                 className="trip-form"
@@ -216,11 +300,22 @@ function App() {
                                         <input
                                             id="startDate"
                                             type="date"
-                                            min={today}
-                                            value={startDate}
-                                            onChange={(event) =>
-                                                setStartDate(event.target.value)
+                                            min={
+                                                editingTripId !== null
+                                                    ? undefined
+                                                    : today
                                             }
+                                            value={startDate}
+                                            onChange={(event) => {
+                                                setStartDate(event.target.value);
+
+                                                if (
+                                                    endDate &&
+                                                    event.target.value > endDate
+                                                ) {
+                                                    setEndDate("");
+                                                }
+                                            }}
                                             required
                                         />
                                     </div>
@@ -265,13 +360,31 @@ function App() {
                                     type="submit"
                                     className="add-trip-button"
                                 >
-                                    Add Trip
+                                    {editingTripId !== null
+                                        ? "Update Trip"
+                                        : "Add Trip"}
                                 </button>
+
+                                {editingTripId !== null && (
+                                    <button
+                                        type="button"
+                                        className="cancel-button"
+                                        onClick={clearForm}
+                                    >
+                                        Cancel Editing
+                                    </button>
+                                )}
                             </form>
+                        </section>
+
+                        <section className="trips-section">
+                            <h2>Recent Trips</h2>
+                            {renderTrips()}
                         </section>
                     </>
                 )}
 
+                {/* My Trips Page */}
                 {activePage === "My Trips" && (
                     <>
                         <header className="topbar">
@@ -284,13 +397,17 @@ function App() {
                         <button
                             type="button"
                             className="add-trip-button"
-                            onClick={() => setActivePage("Dashboard")}
+                            onClick={() => {
+                                clearForm();
+                                setActivePage("Dashboard");
+                            }}
                         >
                             Plan a New Trip
                         </button>
                     </>
                 )}
 
+                {/* Settings Page */}
                 {activePage === "Settings" && (
                     <>
                         <header className="topbar">
@@ -300,19 +417,28 @@ function App() {
 
                         <section className="add-trip-section">
                             <h2>Application Information</h2>
+
                             <p>
                                 <strong>Application:</strong> Travel Planner
                             </p>
+
                             <p>
-                                <strong>Platform:</strong> Desktop
-                                application built with React and Electron
+                                <strong>Platform:</strong> Desktop application
+                                built with React and Electron
                             </p>
+
                             <p>
-                                <strong>Saved Trips:</strong> {trips.length}
+                                <strong>Total Saved Trips:</strong>{" "}
+                                {trips.length}
                             </p>
+
                             <p>
-                                Your trips are stored locally on this
-                                device using localStorage.
+                                Your trips are saved locally on this device.
+                            </p>
+
+                            <p>
+                                You can add, edit, and delete trips from the
+                                application.
                             </p>
                         </section>
                     </>
